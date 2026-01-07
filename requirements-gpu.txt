@@ -1,0 +1,64 @@
+# GPU版本依赖包
+# Core ML Libraries - GPU优化版本
+torch>=2.1.0  # 确保支持CUDA 11.8+
+torchvision>=0.16.0
+transformers>=4.36.0
+datasets>=2.14.0
+tokenizers>=0.15.0
+
+# Parameter-Efficient Fine-tuning
+peft>=0.7.0
+accelerate>=0.24.0
+
+# GPU加速库
+flash-attn>=2.3.0  # Flash Attention 2，显著加速训练
+bitsandbytes>=0.41.0  # GPU量化支持
+deepspeed>=0.12.0  # 可选：大模型分布式训练
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Evaluation Metrics
+evaluate>=0.4.0
+rouge-score>=0.1.2
+sacrebleu>=2.3.0
+bert-score>=0.3.13
+
+# Experiment Tracking and Visualization
+wandb>=0.16.0
+tensorboard>=2.14.0  # 额外的可视化选项
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.17.0
+
+# Configuration and Utilities
+pyyaml>=6.0
+tqdm>=4.65.0
+rich>=13.6.0
+click>=8.1.0
+
+# Development Tools
+jupyter>=1.0.0
+ipywidgets>=8.1.0
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.0.0
+
+# Optional: Additional evaluation tools
+nltk>=3.8.0
+spacy>=3.7.0
+
+# GPU Memory profiling and monitoring
+nvidia-ml-py3>=7.352.0  # NVIDIA GPU监控
+gpustat>=1.1.1  # GPU状态监控
+memory-profiler>=0.61.0
+psutil>=5.9.0
+
+# Optional: 高级优化库
+triton>=2.1.0  # GPU内核优化（可选）
+xformers>=0.0.22  # 内存高效的attention实现（可选）
+
+# Multi-GPU支持
+mpi4py>=3.1.0  # MPI支持（多节点训练时需要）

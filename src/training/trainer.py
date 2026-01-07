@@ -37,9 +37,9 @@ class LoRATrainer:
 
     def __init__(
         self,
-        model_config_path: str = "config/model_config.yaml",
-        lora_config_path: str = "config/lora_config.yaml",
-        output_dir: str = "models/checkpoints",
+        model_config_path: str = "config/qwen_model_config.yaml",
+        lora_config_path: str = "config/qwen_lora_config.yaml",
+        output_dir: str = "models/qwen_checkpoints",
         experiment_name: Optional[str] = None
     ):
         """
@@ -255,7 +255,7 @@ class LoRATrainer:
                     **self.model_config,
                     **self.lora_config
                 },
-                tags=["llama-3.2-3B", "lora", "alpaca", "m3-pro"]
+                tags=["qwen2.5-3B", "lora", "alpaca", "gpu", "rtx4060"]
             )
             logger.info("Wandb初始化成功")
         except Exception as e:

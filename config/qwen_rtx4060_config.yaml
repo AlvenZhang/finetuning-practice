@@ -1,0 +1,97 @@
+# Qwen2.5-3B + RTX 4060 专用优化配置
+# Optimized configuration for Qwen2.5-3B on RTX 4060 (8GB VRAM)
+
+model:
+  name: "Qwen/Qwen2.5-3B-Instruct"
+  model_type: "qwen2"
+  torch_dtype: "bfloat16"
+  device_map: "auto"
+  trust_remote_code: true
+  use_cache: false
+  low_cpu_mem_usage: true
+
+  # RTX 4060优化
+  attn_implementation: "flash_attention_2"
+  use_flash_attention_2: true
+
+tokenizer:
+  name: "Qwen/Qwen2.5-3B-Instruct"
+  padding_side: "left"
+  truncation_side: "left"
+  add_eos_token: true
+  add_bos_token: false
+
+training:
+  # RTX 4060最优参数
+  learning_rate: 1.5e-4
+  num_train_epochs: 3
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 32
+
+  # 优化器
+  optim: "adamw_torch_fused"
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  # 学习率调度
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+
+  # 混合精度
+  bf16: true
+  fp16: false
+  tf32: true
+
+  # 内存优化
+  gradient_checkpointing: true
+  dataloader_pin_memory: true
+  dataloader_num_workers: 2
+
+  # 检查点和日志
+  save_steps: 200
+  eval_steps: 200
+  logging_steps: 10
+  save_total_limit: 2
+
+  # GPU优化
+  torch_compile: false  # RTX 4060可能不需要
+  include_inputs_for_metrics: false
+
+# LoRA配置
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.1
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+data:
+  dataset_name: "tatsu-lab/alpaca"
+  max_length: 1024
+  validation_split: 0.1
+
+  # Qwen Chat格式
+  instruction_template: "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n{instruction}\n{input}<|im_end|>\n<|im_start|>assistant\n{output}<|im_end|>"
+  prompt_template: "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n{instruction}\n{input}<|im_end|>\n<|im_start|>assistant\n"
+
+paths:
+  output_dir: "./models/qwen_rtx4060_checkpoints"
+  cache_dir: "./models/cache"
+  logging_dir: "./experiments/qwen_rtx4060_logs"
+
+# RTX 4060预期性能
+performance:
+  estimated_vram_usage: "7.3GB"
+  training_time_per_epoch: "45-60 minutes"
+  tokens_per_second: "35-50"
+  max_safe_batch_size: 2
+  recommended_max_length: 1024

@@ -56,18 +56,19 @@ class ModelLoader:
         """获取默认模型配置"""
         return {
             'model': {
-                'name': 'meta-llama/Llama-3.2-3B-Instruct',
-                'torch_dtype': 'float16',
+                'name': 'Qwen/Qwen2.5-3B-Instruct',
+                'model_type': 'qwen2',
+                'torch_dtype': 'bfloat16',
                 'device_map': 'auto',
                 'trust_remote_code': True,
                 'use_cache': False
             },
             'tokenizer': {
-                'name': 'meta-llama/Llama-3.2-3B-Instruct',
+                'name': 'Qwen/Qwen2.5-3B-Instruct',
                 'padding_side': 'left',
                 'truncation_side': 'left',
                 'add_eos_token': True,
-                'add_bos_token': True
+                'add_bos_token': False  # Qwen通常不需要BOS token
             }
         }
 

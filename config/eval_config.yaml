@@ -139,7 +139,7 @@ experiment_tracking:
     enabled: true
     project: "llm-finetuning"
     entity: null  # 设置您的wandb用户名
-    tags: ["llama-3.2-3B", "lora", "alpaca", "m3-pro"]
+    tags: ["qwen2.5-3B", "lora", "alpaca", "gpu", "rtx4060"]
 
   # 本地跟踪
   local_logging:

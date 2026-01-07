@@ -56,7 +56,7 @@ class AlpacaDataProcessor:
                     'prompt_template': "### Instruction:\\n{instruction}\\n\\n### Input:\\n{input}\\n\\n### Response:\\n"
                 },
                 'model': {
-                    'name': 'meta-llama/Llama-3.2-3B-Instruct'
+                    'name': 'Qwen/Qwen2.5-3B-Instruct'
                 }
             }
 

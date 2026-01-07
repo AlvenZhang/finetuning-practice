@@ -1,0 +1,133 @@
+# Qwen LoRA配置文件 - RTX 4060 GPU优化版本
+# Qwen LoRA Configuration for Parameter-Efficient Fine-tuning on RTX 4060
+
+lora:
+  # LoRA基本参数 - RTX 4060 8GB显存优化
+  r: 16                   # RTX 4060使用适中的rank，平衡性能和显存
+  lora_alpha: 32         # 缩放参数，设为2*r
+  lora_dropout: 0.1      # Qwen推荐的dropout值
+
+  # 目标模块 - Qwen2架构的所有线性层
+  target_modules:
+    - "q_proj"            # 查询投影
+    - "k_proj"            # 键投影
+    - "v_proj"            # 值投影
+    - "o_proj"            # 输出投影
+    - "gate_proj"         # 门控投影
+    - "up_proj"           # 上投影
+    - "down_proj"         # 下投影
+
+  # LoRA配置
+  bias: "none"            # 不训练偏置项
+  task_type: "CAUSAL_LM"  # 因果语言模型任务
+  inference_mode: false   # 训练模式
+
+  # 高级设置
+  fan_in_fan_out: false   # Qwen2不需要
+  init_lora_weights: true # 初始化LoRA权重
+  use_rslora: false       # 可选：使用RS-LoRA
+  use_dora: false         # 可选：使用DoRA
+
+  # GPU优化设置
+  modules_to_save: []     # 额外要保存的模块
+  revision: "main"
+
+# 参数统计 (Qwen2.5-3B + RTX 4060预期值)
+estimated_params:
+  total_params: "3.1B"           # Qwen2.5-3B总参数量
+  trainable_params: "~4.2M"     # LoRA可训练参数 (rank=16时约0.14%)
+  trainable_percentage: "0.14%" # 可训练参数占比
+
+# RTX 4060显存估算 (8GB VRAM)
+memory_estimation:
+  base_model: "6.2GB"      # Qwen2.5-3B基础模型 (bfloat16)
+  lora_params: "16MB"      # LoRA参数 (rank=16)
+  gradients: "16MB"        # 梯度
+  optimizer_states: "32MB" # 优化器状态
+  activations: "1-2GB"     # 激活值 (batch_size=2, max_length=1024)
+  total_estimated: "~7.3GB" # 总估计显存使用，RTX 4060安全范围
+
+# 训练效率
+efficiency:
+  memory_reduction: "80%"   # 相比全量微调的显存减少
+  speed_improvement: "3-4x" # 训练速度提升
+  quality_retention: "95%+" # 性能保持度
+
+# RTX 4060优化实验配置
+experiments:
+  # RTX 4060不同rank实验设置
+  rank_experiments:
+    - r: 8
+      alpha: 16
+      description: "最小显存配置"
+      estimated_vram: "6.5GB"
+    - r: 16
+      alpha: 32
+      description: "推荐RTX 4060配置"
+      estimated_vram: "7.3GB"
+    - r: 32
+      alpha: 64
+      description: "高性能配置，接近显存上限"
+      estimated_vram: "7.8GB"
+
+  # Qwen学习率实验
+  learning_rate_experiments:
+    - lr: 1e-4
+      description: "保守学习率，稳定训练"
+    - lr: 1.5e-4
+      description: "推荐学习率，RTX 4060最佳"
+    - lr: 2e-4
+      description: "较高学习率，需要监控"
+
+  # RTX 4060特定实验
+  rtx_4060_experiments:
+    # 批次大小实验
+    batch_size_experiments:
+      - batch_size: 1
+        gradient_accumulation: 64
+        description: "最保守配置，6GB显存"
+      - batch_size: 2
+        gradient_accumulation: 32
+        description: "推荐RTX 4060配置，7-8GB显存"
+      - batch_size: 3
+        gradient_accumulation: 22
+        description: "激进配置，接近8GB上限"
+
+    # 序列长度实验
+    sequence_length_experiments:
+      - max_length: 512
+        description: "短序列，节省显存"
+      - max_length: 1024
+        description: "推荐配置，平衡性能"
+      - max_length: 1536
+        description: "长序列，需要减小batch_size"
+
+# 多GPU配置（如果使用多GPU训练）
+multi_gpu:
+  enabled: false
+  num_gpus: 1
+
+  # 分布式训练设置
+  distributed:
+    backend: "nccl"
+    init_method: "env://"
+
+  # 数据并行
+  data_parallel: false
+
+  # 模型并行（大模型）
+  model_parallel: false
+  pipeline_parallel: false
+
+# 量化配置（可选，进一步节省显存）
+quantization:
+  enabled: false  # 默认关闭，可手动启用
+
+  # 4bit量化配置
+  load_in_4bit: false
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_quant_type: "nf4"
+
+  # 8bit量化配置
+  load_in_8bit: false

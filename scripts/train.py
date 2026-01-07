@@ -29,15 +29,31 @@ def parse_arguments():
     parser.add_argument(
         "--model_config",
         type=str,
-        default="config/qwen_model_config.yaml",
+        default="config/gpu_model_config.yaml",
         help="模型配置文件路径"
     )
 
     parser.add_argument(
         "--lora_config",
         type=str,
-        default="config/qwen_lora_config.yaml",
+        default="config/gpu_lora_config.yaml",
         help="LoRA配置文件路径"
+    )
+
+    # 环境选择
+    parser.add_argument(
+        "--device",
+        type=str,
+        choices=["auto", "cuda", "cpu", "mps"],
+        default="auto",
+        help="指定设备类型"
+    )
+
+    parser.add_argument(
+        "--gpu_id",
+        type=int,
+        default=0,
+        help="指定GPU ID"
     )
 
     parser.add_argument(

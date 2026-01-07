@@ -27,7 +27,7 @@ def parse_arguments():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="meta-llama/Llama-3.2-3B-Instruct",
+        default="Qwen/Qwen2.5-3B-Instruct",
         help="基础模型名称"
     )
 

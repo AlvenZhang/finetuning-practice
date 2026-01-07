@@ -7,7 +7,7 @@ lora:
   lora_alpha: 32          # 缩放参数，通常设为2*r
   lora_dropout: 0.1       # LoRA层的dropout率
 
-  # 目标模块 - Llama架构的所有线性层
+  # 目标模块 - Qwen2架构的所有线性层
   target_modules:
     - "q_proj"            # 查询投影
     - "k_proj"            # 键投影
@@ -23,7 +23,7 @@ lora:
   inference_mode: false   # 训练模式
 
   # 高级设置
-  fan_in_fan_out: false   # Llama不需要
+  fan_in_fan_out: false   # Qwen2不需要
   init_lora_weights: true # 初始化LoRA权重
   use_rslora: false       # 不使用RS-LoRA
   use_dora: false         # 不使用DoRA

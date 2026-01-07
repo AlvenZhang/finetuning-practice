@@ -216,8 +216,8 @@ def main():
     print("🤖 LLM模型下载工具")
     print("=" * 50)
 
-    # 从配置文件获取模型名称（如果未指定）
-    if args.model_name == "meta-llama/Llama-3.2-3B-Instruct":  # 默认值
+    # 从配置文件获取模型名称（如果使用默认值）
+    if args.model_name == "Qwen/Qwen2.5-3B-Instruct":  # 默认值
         config = load_config(args.config_file)
         if config and 'model' in config and 'name' in config['model']:
             args.model_name = config['model']['name']

@@ -24,7 +24,7 @@ lora:
   inference_mode: false    # 训练模式
 
   # 速度优化设置
-  fan_in_fan_out: false    # Llama不需要
+  fan_in_fan_out: false    # Qwen2不需要
   init_lora_weights: true  # 初始化LoRA权重
   use_rslora: false        # 不使用RS-LoRA (简化计算)
   use_dora: false          # 不使用DoRA (简化计算)
