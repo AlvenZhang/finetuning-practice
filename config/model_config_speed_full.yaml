@@ -1,0 +1,174 @@
+# 模型速度优化配置 - 方案A (最小内存+最快训练速度)
+# Model Speed Optimization Configuration - Plan A (Minimal Memory + Maximum Training Speed)
+
+# 模型基础配置 - 使用本地Qwen模型
+model:
+  name: "./models/base/qwen2.5-3b-instruct"  # 使用本地Qwen模型
+  model_type: "qwen2"
+  torch_dtype: "bfloat16"   # Qwen使用bfloat16更稳定
+  device_map: "auto"
+  trust_remote_code: true   # Qwen需要trust_remote_code
+  use_cache: false          # 训练时禁用缓存节省内存
+
+# 分词器配置
+tokenizer:
+  name: "./models/base/qwen2.5-3b-instruct"  # 使用本地tokenizer
+  padding_side: "left"      # Qwen使用左填充
+  truncation_side: "left"   # 从左侧截断
+  add_eos_token: true
+  add_bos_token: true
+
+# 数据配置 - 大幅减少序列长度
+data:
+  dataset_name: "yahma/alpaca-cleaned"
+  max_length: 256           # 从512大幅降至256，激活值内存减少75%
+  validation_split: 0.1
+  seed: 42
+
+# 训练配置 - 全面速度优化
+training:
+  # 基础训练参数
+  output_dir: "./models/checkpoints"
+  overwrite_output_dir: true
+
+  # 批次和梯度累积优化
+  per_device_train_batch_size: 1      # 保持最小批次
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16     # 从64降至16，减少内存压力和提升速度
+
+  # 学习率优化 - Qwen模型使用保守学习率
+  learning_rate: 5e-5                 # Qwen模型对学习率敏感，使用保守值
+  weight_decay: 0.01
+
+  # 训练轮数优化 - 完整训练版本
+  num_train_epochs: 2                 # 完整训练2轮
+  max_steps: -1                       # 使用epoch而非固定步数
+
+  # 学习率调度优化
+  lr_scheduler_type: "cosine"         # 使用cosine调度器
+  warmup_steps: 50                    # 从默认的3%大幅减少warmup步数
+  warmup_ratio: 0.0                   # 禁用ratio，直接使用steps
+
+  # 梯度优化
+  max_grad_norm: 0.3                  # 更严格的梯度裁剪，从1.0降至0.3
+  gradient_checkpointing: true        # 启用梯度检查点节省内存
+
+  # 保存和评估频率优化 - 减少I/O开销
+  save_strategy: "steps"
+  save_steps: 200                     # 从500减少至200，但总体保存次数减少
+  save_total_limit: 2                 # 只保留最近2个检查点
+
+  evaluation_strategy: "steps"
+  eval_steps: 200                     # 从500减少至200
+
+  # 日志优化
+  logging_strategy: "steps"
+  logging_steps: 5                    # 更频繁的日志以监控速度
+  logging_first_step: true
+
+  # 数据加载优化
+  dataloader_num_workers: 0           # 保持单线程避免内存问题
+  dataloader_pin_memory: false        # 禁用pin_memory节省内存
+  remove_unused_columns: true         # 移除未使用的列
+
+  # 优化器配置
+  optim: "adamw_torch"                # 使用PyTorch原生AdamW
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1e-8
+
+  # 速度优化设置 - Qwen使用bfloat16
+  bf16: true                          # 启用bfloat16混合精度 (Qwen推荐)
+  fp16: false                         # 禁用fp16
+  bf16_full_eval: false               # 评估时不使用bf16以保证精度
+
+  # 其他速度优化
+  prediction_loss_only: true          # 只计算预测损失，不计算其他指标
+  greater_is_better: false            # loss越小越好
+  metric_for_best_model: "eval_loss"
+  load_best_model_at_end: false       # 不加载最佳模型，节省时间
+
+  # 禁用一些耗时的功能
+  report_to: []                       # 禁用wandb等报告，减少开销
+  run_name: "lora_speed_optimized"
+  seed: 42
+  data_seed: 42
+
+# 内存优化配置
+memory:
+  # 混合精度设置 - Qwen使用bfloat16
+  fp16: false
+  bf16: true
+
+  # 梯度检查点
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false              # 使用新的检查点实现
+
+  # 内存清理
+  torch_empty_cache_steps: 100        # 每100步清理一次缓存
+
+# MLX优化配置 (Apple Silicon)
+mlx:
+  enabled: true
+  memory_limit: 8                     # 设置8GB内存限制
+  unified_memory: true
+
+# 数据预处理优化
+preprocessing:
+  # 文本长度限制
+  instruction_max_length: 150         # 限制指令最大长度
+  input_max_length: 80               # 限制输入最大长度
+  output_max_length: 100             # 限制输出最大长度
+
+  # 预处理并行度
+  preprocessing_num_workers: 1        # 单线程预处理
+
+  # 缓存设置
+  cache_dir: "./cache"
+  overwrite_cache: false
+
+# 性能监控配置
+monitoring:
+  # 内存监控
+  log_memory_usage: true
+  memory_log_interval: 50             # 每50步记录一次内存使用
+
+  # 速度监控
+  log_training_speed: true
+  speed_log_interval: 10              # 每10步记录一次训练速度
+
+# 实验配置
+experiment:
+  name: "lora_speed_plan_a"
+  description: "最小内存+最快训练速度配置"
+  target_metrics:
+    max_memory_usage: "8.5GB"
+    target_speed_improvement: "40%"
+    min_performance_retention: "85%"
+
+  # 对比基准
+  baseline:
+    memory_usage: "11GB"
+    training_time: "4-6 hours"
+    parameters: "4.2M"
+
+  # 优化目标
+  optimized:
+    memory_usage: "8GB"
+    training_time: "2-3 hours"
+    parameters: "2.1M"
+
+# 调试和故障排除
+debug:
+  # 调试模式设置
+  debug_mode: false
+  verbose_logging: false
+
+  # 故障排除
+  detect_anomaly: false               # 禁用异常检测以提升速度
+  profile_memory: false               # 禁用内存分析以提升速度
+
+  # 快速失败设置
+  max_memory_threshold: 0.9           # 内存使用超过90%时警告
+  early_stopping_patience: 5          # 早停耐心度

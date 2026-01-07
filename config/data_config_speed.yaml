@@ -1,0 +1,182 @@
+# 数据处理优化配置 - 方案A (最小内存+最快训练速度)
+# Data Processing Speed Optimization Configuration - Plan A
+
+# 数据集基础配置
+data:
+  # 数据集设置
+  dataset_name: "yahma/alpaca-cleaned"
+  dataset_config_name: null
+  dataset_split: "train"
+
+  # 序列长度优化 - 大幅减少以节省内存和提升速度
+  max_length: 256                     # 从512大幅降至256
+  truncation: true                    # 启用截断
+  padding: "max_length"               # 使用固定长度padding，提升批处理效率
+
+  # 验证集配置
+  validation_split: 0.1
+  test_split: 0.0                     # 不使用测试集，专注训练速度
+
+  # 数据采样优化
+  max_train_samples: null             # 使用全部训练数据
+  max_eval_samples: 1000              # 限制验证样本数量，加快评估速度
+
+# 文本预处理优化 - 激进的长度限制
+preprocessing:
+  # 各部分长度限制 - 确保总长度不超过256
+  instruction_max_length: 150         # 指令最大长度 (原来无限制)
+  input_max_length: 80               # 输入最大长度 (原来无限制)
+  output_max_length: 100             # 输出最大长度 (原来无限制)
+
+  # 文本清理设置
+  strip_whitespace: true              # 去除多余空白
+  remove_empty_lines: true            # 移除空行
+  normalize_unicode: false            # 禁用Unicode标准化以提升速度
+
+  # 模板优化 - 简化格式减少token数量
+  use_simplified_template: true       # 启用简化模板
+  template_format: "compact"          # 使用紧凑格式
+
+  # 预处理并行度
+  preprocessing_num_workers: 1        # 单线程预处理避免内存问题
+  writer_batch_size: 1000            # 写入批次大小
+
+# 数据加载优化
+dataloader:
+  # 基础设置
+  batch_size: 1                       # 最小批次大小
+  shuffle: true                       # 训练时打乱数据
+
+  # 性能优化
+  num_workers: 0                      # 单线程加载避免内存问题
+  pin_memory: false                   # 禁用pin_memory节省内存
+  drop_last: false                    # 不丢弃最后一个不完整的批次
+
+  # 预取设置
+  prefetch_factor: null               # 禁用预取节省内存
+  persistent_workers: false           # 不保持worker进程
+
+# 缓存配置
+cache:
+  # 缓存目录
+  cache_dir: "./cache/speed_optimized"
+
+  # 缓存策略
+  use_cache: true                     # 启用缓存避免重复预处理
+  overwrite_cache: false              # 不覆盖现有缓存
+  cache_file_name: "speed_cache"
+
+  # 内存缓存
+  keep_in_memory: false               # 不在内存中保持数据集，节省内存
+
+# 分词器配置
+tokenizer:
+  # 基础设置
+  model_max_length: 256               # 与max_length保持一致
+  truncation_side: "right"            # 从右侧截断
+  padding_side: "right"               # 从右侧填充
+
+  # 特殊token处理
+  add_special_tokens: true            # 添加特殊token
+  return_attention_mask: true         # 返回attention mask
+  return_token_type_ids: false        # 不返回token type ids，节省内存
+
+  # 速度优化
+  use_fast_tokenizer: true            # 使用快速分词器
+  clean_up_tokenization_spaces: false # 禁用清理以提升速度
+
+# 数据格式优化
+format:
+  # 输入格式简化
+  instruction_prefix: "指令: "         # 简化前缀
+  input_prefix: "输入: "              # 简化前缀
+  response_prefix: "回答: "           # 简化前缀
+
+  # 分隔符简化
+  instruction_separator: "\n"         # 使用单个换行符
+  response_separator: "\n"
+
+  # 去除不必要的格式
+  remove_markdown: true               # 移除markdown格式
+  remove_extra_spaces: true           # 移除多余空格
+
+# 标签处理优化
+labels:
+  # 标签掩码设置
+  ignore_index: -100                  # 忽略的标签索引
+  mask_prompt_tokens: true            # 掩码提示token，只计算回答部分的loss
+
+  # 响应token处理
+  response_template: "回答: "          # 响应模板
+  include_eos_token: true             # 包含结束token
+
+# 数据增强设置 (禁用以提升速度)
+augmentation:
+  enabled: false                      # 禁用数据增强
+  shuffle_sentences: false            # 不打乱句子
+  random_truncation: false            # 不随机截断
+
+# 质量控制 (简化以提升速度)
+quality_control:
+  # 长度过滤
+  min_length: 10                      # 最小长度要求
+  max_length: 256                     # 最大长度限制
+
+  # 质量过滤 (简化)
+  filter_empty: true                  # 过滤空样本
+  filter_duplicates: false            # 不过滤重复样本，节省时间
+
+  # 语言检测 (禁用)
+  language_detection: false           # 禁用语言检测
+
+# 内存优化
+memory:
+  # 数据集内存管理
+  streaming: false                    # 不使用流式加载
+  buffer_size: 1000                   # 缓冲区大小
+
+  # 垃圾回收
+  gc_after_loading: true              # 加载后执行垃圾回收
+  clear_cache_after_preprocessing: true # 预处理后清理缓存
+
+# 速度监控
+monitoring:
+  # 处理速度监控
+  log_preprocessing_speed: true       # 记录预处理速度
+  log_loading_speed: true             # 记录加载速度
+
+  # 统计信息
+  collect_stats: false                # 不收集详细统计信息，节省时间
+
+# 实验配置
+experiment:
+  name: "data_speed_plan_a"
+  description: "数据处理速度优化配置"
+
+  # 优化目标
+  targets:
+    preprocessing_speed: "50%+ improvement"
+    memory_usage: "minimal"
+    data_quality: "sufficient for short Q&A"
+
+  # 对比基准
+  baseline:
+    max_length: 512
+    preprocessing_time: "baseline"
+    memory_usage: "baseline"
+
+  # 优化后预期
+  optimized:
+    max_length: 256
+    preprocessing_time: "-50%"
+    memory_usage: "-75%"
+
+# 调试设置
+debug:
+  # 调试输出
+  verbose: false                      # 禁用详细输出
+  sample_preview: false               # 不预览样本，节省时间
+
+  # 验证设置
+  validate_data: false                # 不验证数据格式，节省时间
+  check_lengths: true                 # 检查长度限制

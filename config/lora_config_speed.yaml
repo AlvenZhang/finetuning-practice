@@ -1,0 +1,85 @@
+# LoRA速度优化配置 - 方案A (最小内存+最快训练速度)
+# LoRA Speed Optimization Configuration - Plan A (Minimal Memory + Maximum Training Speed)
+
+lora:
+  # 最小参数配置 - 大幅减少参数量
+  r: 8                      # 低秩分解的秩，从16降至8，参数量减半
+  lora_alpha: 16           # 缩放参数，设为2*r
+  lora_dropout: 0.05       # 降低dropout从0.1到0.05，提升训练速度
+
+  # 只保留4个核心注意力模块 - 去除FFN层以节省内存和提升速度
+  target_modules:
+    - "q_proj"             # 查询投影 (核心)
+    - "k_proj"             # 键投影 (核心)
+    - "v_proj"             # 值投影 (核心)
+    - "o_proj"             # 输出投影 (核心)
+    # 移除的模块 (为节省内存和提升速度):
+    # - "gate_proj"        # 门控投影 (FFN)
+    # - "up_proj"          # 上投影 (FFN)
+    # - "down_proj"        # 下投影 (FFN)
+
+  # LoRA基本配置
+  bias: "none"             # 不训练偏置项
+  task_type: "CAUSAL_LM"   # 因果语言模型任务
+  inference_mode: false    # 训练模式
+
+  # 速度优化设置
+  fan_in_fan_out: false    # Llama不需要
+  init_lora_weights: true  # 初始化LoRA权重
+  use_rslora: false        # 不使用RS-LoRA (简化计算)
+  use_dora: false          # 不使用DoRA (简化计算)
+
+# 参数统计 (方案A预期值)
+estimated_params:
+  total_params: "3.2B"           # 总参数量
+  trainable_params: "~2.1M"     # LoRA可训练参数 (从4.2M减少50%)
+  trainable_percentage: "0.065%" # 可训练参数占比 (从0.13%减半)
+
+# 内存估算 (M3 Pro 18GB - 方案A)
+memory_estimation:
+  base_model: "6GB"       # 基础模型 (FP16)
+  lora_params: "8MB"      # LoRA参数 (从16MB减半)
+  gradients: "8MB"        # 梯度 (从16MB减半)
+  optimizer_states: "16MB" # 优化器状态 (从32MB减半)
+  activations: "1.5-2GB"  # 激活值 (序列长度256, 从4-6GB大幅减少)
+  total_estimated: "~8GB" # 总估计内存使用 (从11GB降至8GB)
+
+# 训练效率 (方案A)
+efficiency:
+  memory_reduction: "27%"  # 相比当前配置的内存减少
+  speed_improvement: "40-50%" # 训练速度提升
+  quality_retention: "85-90%" # 性能保持度
+  parameter_reduction: "50%"   # 参数量减少
+
+# 速度优化策略
+speed_optimizations:
+  reduced_modules: "移除3个FFN模块，只保留4个注意力模块"
+  reduced_rank: "rank从16降至8，参数量减半"
+  reduced_dropout: "dropout从0.1降至0.05，减少计算开销"
+  simplified_config: "禁用RS-LoRA和DoRA，简化计算图"
+
+# 适用场景
+use_cases:
+  primary: "短指令问答"
+  secondary: "简单事实查询"
+  tertiary: "基础指令跟随"
+  limitations: "复杂推理能力有限，不适合长文本处理"
+
+# 与其他方案对比
+comparison:
+  vs_current:
+    memory: "11GB → 8GB (节省27%)"
+    speed: "提升40-50%"
+    performance: "95% → 85-90%"
+  vs_full_finetune:
+    memory: "节省85%+"
+    speed: "提升2-3倍"
+    parameters: "仅0.065%参数可训练"
+
+# 实验记录模板
+experiment_log:
+  config_name: "lora_speed_plan_a"
+  creation_date: "2026-01-07"
+  target_memory: "<8.5GB"
+  target_speed: "+40% vs current"
+  target_performance: ">85% retention"

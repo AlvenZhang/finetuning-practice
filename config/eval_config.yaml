@@ -1,0 +1,162 @@
+# 评估配置文件
+# Evaluation Configuration for LLM Fine-tuning Assessment
+
+evaluation:
+  # 评估策略
+  strategy: "steps"           # 按步数评估
+  eval_steps: 500            # 每500步评估一次
+  eval_accumulation_steps: 1  # 评估时的累积步数
+
+  # 评估数据
+  eval_dataset_size: 1000    # 评估数据集大小
+  max_eval_samples: 500      # 最大评估样本数
+
+  # 生成参数
+  generation:
+    max_new_tokens: 256      # 最大生成token数
+    do_sample: true          # 使用采样
+    temperature: 0.7         # 温度参数
+    top_p: 0.9              # Top-p采样
+    top_k: 50               # Top-k采样
+    repetition_penalty: 1.1  # 重复惩罚
+    length_penalty: 1.0      # 长度惩罚
+
+# 自动化评估指标
+automated_metrics:
+  # 基础指标
+  perplexity:
+    enabled: true
+    description: "模型困惑度，衡量预测不确定性"
+
+  # 文本生成质量指标
+  bleu:
+    enabled: true
+    max_order: 4
+    smooth: true
+    description: "BLEU分数，N-gram重叠度"
+
+  rouge:
+    enabled: true
+    rouge_types: ["rouge1", "rouge2", "rougeL"]
+    use_stemmer: true
+    description: "ROUGE分数，召回导向的重叠度"
+
+  bert_score:
+    enabled: true
+    model_type: "microsoft/deberta-xlarge-mnli"
+    lang: "en"
+    description: "BERTScore，语义相似度"
+
+  # 指令跟随特定指标
+  exact_match:
+    enabled: true
+    description: "精确匹配率"
+
+  # 自定义指标
+  custom_metrics:
+    - name: "instruction_following_rate"
+      description: "指令跟随成功率"
+    - name: "safety_score"
+      description: "安全性评分"
+    - name: "helpfulness_score"
+      description: "有用性评分"
+
+# 人工评估配置
+human_evaluation:
+  # 评估维度
+  dimensions:
+    helpfulness:
+      scale: [1, 2, 3, 4, 5]
+      description: "回答是否有帮助和相关"
+
+    harmlessness:
+      scale: [1, 2, 3, 4, 5]
+      description: "回答是否安全和无害"
+
+    honesty:
+      scale: [1, 2, 3, 4, 5]
+      description: "回答是否诚实，承认不确定性"
+
+    coherence:
+      scale: [1, 2, 3, 4, 5]
+      description: "回答是否连贯和逻辑清晰"
+
+    creativity:
+      scale: [1, 2, 3, 4, 5]
+      description: "回答是否有创意 (适用时)"
+
+  # 评估样本
+  sample_size: 100           # 人工评估样本数
+  random_seed: 42           # 随机种子确保可复现
+
+  # 评估任务类型
+  task_categories:
+    - "reasoning"            # 推理任务
+    - "creative_writing"     # 创意写作
+    - "factual_qa"          # 事实问答
+    - "code_generation"     # 代码生成
+    - "instruction_following" # 指令跟随
+
+# 基线对比
+baseline_comparison:
+  models:
+    - name: "base_model"
+      description: "未微调的基础模型"
+      path: "./models/base/"
+
+    - name: "gpt-3.5-turbo"
+      description: "GPT-3.5对比基线"
+      api_based: true
+
+  comparison_metrics:
+    - "bleu"
+    - "rouge"
+    - "bert_score"
+    - "human_preference"
+
+# 评估报告
+reporting:
+  # 输出格式
+  formats: ["json", "csv", "html"]
+
+  # 报告内容
+  include:
+    - "metric_scores"        # 指标分数
+    - "sample_outputs"       # 样本输出
+    - "error_analysis"       # 错误分析
+    - "improvement_suggestions" # 改进建议
+
+  # 可视化
+  visualizations:
+    - "metric_trends"        # 指标趋势图
+    - "score_distributions"  # 分数分布图
+    - "comparison_radar"     # 对比雷达图
+    - "confusion_matrix"     # 混淆矩阵 (分类任务)
+
+# 实验跟踪
+experiment_tracking:
+  wandb:
+    enabled: true
+    project: "llm-finetuning"
+    entity: null  # 设置您的wandb用户名
+    tags: ["llama-3.2-3B", "lora", "alpaca", "m3-pro"]
+
+  # 本地跟踪
+  local_logging:
+    enabled: true
+    log_dir: "./experiments/logs"
+    save_predictions: true
+    save_model_outputs: true
+
+# 评估调度
+evaluation_schedule:
+  # 训练中评估
+  during_training:
+    frequency: "every_500_steps"
+    quick_eval: true         # 快速评估模式
+
+  # 训练后评估
+  post_training:
+    comprehensive: true      # 全面评估
+    include_human_eval: true # 包含人工评估
+    generate_report: true    # 生成详细报告

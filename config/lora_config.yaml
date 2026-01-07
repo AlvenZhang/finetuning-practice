@@ -1,0 +1,67 @@
+# LoRA (Low-Rank Adaptation) 配置文件
+# LoRA Configuration for Parameter-Efficient Fine-tuning
+
+lora:
+  # LoRA基本参数
+  r: 16                    # 低秩分解的秩，控制参数量
+  lora_alpha: 32          # 缩放参数，通常设为2*r
+  lora_dropout: 0.1       # LoRA层的dropout率
+
+  # 目标模块 - Llama架构的所有线性层
+  target_modules:
+    - "q_proj"            # 查询投影
+    - "k_proj"            # 键投影
+    - "v_proj"            # 值投影
+    - "o_proj"            # 输出投影
+    - "gate_proj"         # 门控投影
+    - "up_proj"           # 上投影
+    - "down_proj"         # 下投影
+
+  # LoRA配置
+  bias: "none"            # 不训练偏置项
+  task_type: "CAUSAL_LM"  # 因果语言模型任务
+  inference_mode: false   # 训练模式
+
+  # 高级设置
+  fan_in_fan_out: false   # Llama不需要
+  init_lora_weights: true # 初始化LoRA权重
+  use_rslora: false       # 不使用RS-LoRA
+  use_dora: false         # 不使用DoRA
+
+# 参数统计 (预期值)
+estimated_params:
+  total_params: "3.2B"           # 总参数量
+  trainable_params: "~4.2M"     # LoRA可训练参数 (~0.13%)
+  trainable_percentage: "0.13%" # 可训练参数占比
+
+# 内存估算 (M3 Pro 18GB)
+memory_estimation:
+  base_model: "6GB"       # 基础模型 (FP16)
+  lora_params: "16MB"     # LoRA参数
+  gradients: "16MB"       # 梯度
+  optimizer_states: "32MB" # 优化器状态
+  activations: "4-6GB"    # 激活值 (取决于序列长度)
+  total_estimated: "~11GB" # 总估计内存使用
+
+# 训练效率
+efficiency:
+  memory_reduction: "85%"  # 相比全量微调的内存减少
+  speed_improvement: "2-3x" # 训练速度提升
+  quality_retention: "95%+" # 性能保持度
+
+# 实验配置
+experiments:
+  # 不同秩的实验设置
+  rank_experiments:
+    - r: 8
+      description: "更少参数，更快训练"
+    - r: 16
+      description: "平衡参数量和性能 (推荐)"
+    - r: 32
+      description: "更多参数，可能更好性能"
+
+  # Alpha缩放实验
+  alpha_experiments:
+    - alpha: 16  # r的1倍
+    - alpha: 32  # r的2倍 (推荐)
+    - alpha: 64  # r的4倍

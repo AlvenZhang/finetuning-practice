@@ -1,0 +1,89 @@
+# Qwen LoRA (Low-Rank Adaptation) 配置文件
+# Qwen LoRA Configuration for Parameter-Efficient Fine-tuning
+
+lora:
+  # LoRA基本参数 - 针对Qwen 3B优化
+  r: 16                    # 低秩分解的秩，3B模型使用适中的秩
+  lora_alpha: 32          # 缩放参数，设为2*r
+  lora_dropout: 0.1       # 标准dropout率
+
+  # 目标模块 - Qwen2架构的所有线性层
+  target_modules:
+    - "q_proj"            # 查询投影
+    - "k_proj"            # 键投影
+    - "v_proj"            # 值投影
+    - "o_proj"            # 输出投影
+    - "gate_proj"         # 门控投影
+    - "up_proj"           # 上投影
+    - "down_proj"         # 下投影
+
+  # LoRA配置
+  bias: "none"            # 不训练偏置项
+  task_type: "CAUSAL_LM"  # 因果语言模型任务
+  inference_mode: false   # 训练模式
+
+  # 高级设置
+  fan_in_fan_out: false   # Qwen2不需要
+  init_lora_weights: true # 初始化LoRA权重
+  use_rslora: false       # 不使用RS-LoRA
+  use_dora: false         # 不使用DoRA
+
+# 参数统计 (Qwen 3B预期值)
+estimated_params:
+  total_params: "3.1B"           # Qwen2-3B总参数量
+  trainable_params: "~8.4M"      # LoRA可训练参数 (~0.27%)
+  trainable_percentage: "0.27%" # 可训练参数占比
+
+# 内存估算 (M3 Pro 18GB)
+memory_estimation:
+  base_model: "6GB"       # Qwen 3B基础模型 (bfloat16)
+  lora_params: "34MB"     # LoRA参数
+  gradients: "34MB"       # 梯度
+  optimizer_states: "68MB" # 优化器状态
+  activations: "2-4GB"    # 激活值 (取决于序列长度)
+  total_estimated: "~10GB" # 总估计内存使用 (很安全)
+
+# 训练效率
+efficiency:
+  memory_reduction: "80%"  # 相比全量微调的内存减少
+  speed_improvement: "2x"  # 训练速度提升
+  quality_retention: "95%+" # 性能保持度
+
+# Qwen特定优化
+qwen_optimizations:
+  # 针对Qwen的特殊设置
+  attention_optimization: true
+  rope_scaling: false      # Qwen已经有很好的位置编码
+  sliding_window: false    # 不使用滑动窗口注意力
+
+# 实验配置
+experiments:
+  # 不同秩的实验设置 (针对Qwen 7B)
+  rank_experiments:
+    - r: 16
+      alpha: 32
+      description: "较少参数，适合内存紧张"
+    - r: 32
+      alpha: 64
+      description: "平衡参数量和性能 (推荐)"
+    - r: 64
+      alpha: 128
+      description: "更多参数，可能更好性能"
+
+  # 学习率实验 (Qwen对学习率敏感)
+  learning_rate_experiments:
+    - lr: 1e-5
+      description: "保守学习率，稳定训练"
+    - lr: 5e-5
+      description: "推荐学习率"
+    - lr: 1e-4
+      description: "较高学习率，需要监控"
+
+# 训练建议
+training_recommendations:
+  warmup_ratio: 0.05      # Qwen建议更长的warmup
+  max_grad_norm: 0.5      # 更严格的梯度裁剪
+  save_strategy: "steps"
+  save_steps: 200         # 更频繁的保存以防内存溢出
+  eval_steps: 200
+  logging_steps: 5        # 更频繁的日志记录

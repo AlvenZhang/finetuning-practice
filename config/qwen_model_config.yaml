@@ -1,0 +1,81 @@
+# Qwen 模型配置文件
+# Qwen Model Configuration for Fine-tuning
+
+model:
+  name: "./models/base/qwen2.5-3b-instruct"  # 本地模型路径
+  model_type: "qwen2"
+  torch_dtype: "bfloat16"  # Qwen默认使用bfloat16
+  device_map: "auto"
+  trust_remote_code: true
+  use_cache: false  # 训练时禁用缓存以节省内存
+
+tokenizer:
+  name: "./models/base/qwen2.5-3b-instruct"  # 使用本地tokenizer
+  padding_side: "left"
+  truncation_side: "left"
+  add_eos_token: true
+  add_bos_token: true
+
+training:
+  # 训练超参数 - 针对Qwen 3B优化
+  learning_rate: 1.0e-4  # Qwen 3B可以使用稍高的学习率
+  num_train_epochs: 3
+  per_device_train_batch_size: 2  # 3B模型可以使用更大的批次
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 32  # 有效批大小 = 2 * 32 = 64
+
+  # 优化器设置
+  optim: "adamw_torch"
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+
+  # 学习率调度
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+
+  # 内存优化 - Qwen 7B需要更激进的内存优化
+  gradient_checkpointing: true
+  dataloader_pin_memory: false
+  remove_unused_columns: false
+  fp16: false  # 使用bfloat16而不是fp16
+  bf16: true   # 启用bfloat16混合精度训练
+
+  # 保存和日志
+  save_steps: 500
+  eval_steps: 500
+  logging_steps: 10
+  save_total_limit: 2  # 减少保存的检查点数量以节省空间
+  evaluation_strategy: "steps"
+  save_strategy: "steps"
+
+  # 其他设置
+  dataloader_num_workers: 0  # 单线程数据加载避免内存问题
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+data:
+  # 数据集配置
+  dataset_name: "tatsu-lab/alpaca"
+  max_length: 2048  # Qwen 3B可以处理更长序列
+  train_split: "train"
+  validation_split: 0.1
+  test_split: 0.1
+
+  # 指令模板 - 适配Qwen的对话格式
+  instruction_template: "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n{instruction}\n{input}<|im_end|>\n<|im_start|>assistant\n{output}<|im_end|>"
+  prompt_template: "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n{instruction}\n{input}<|im_end|>\n<|im_start|>assistant\n"
+
+paths:
+  # 路径配置
+  output_dir: "./models/qwen_checkpoints"
+  cache_dir: "./models/cache"
+  logging_dir: "./experiments/qwen_logs"
+
+mlx:
+  # MLX特定配置 (Apple Silicon优化)
+  enabled: true
+  memory_limit: 16  # GB, Qwen 3B内存需求较小，可以使用更多内存

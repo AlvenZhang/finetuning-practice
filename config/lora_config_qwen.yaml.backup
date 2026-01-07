@@ -1,0 +1,67 @@
+# LoRA (Low-Rank Adaptation) 配置文件 - Qwen2.5 版本
+# LoRA Configuration for Parameter-Efficient Fine-tuning
+
+lora:
+  # LoRA基本参数
+  r: 16                    # 低秩分解的秩，控制参数量
+  lora_alpha: 32          # 缩放参数，通常设为2*r
+  lora_dropout: 0.1       # LoRA层的dropout率
+
+  # 目标模块 - Qwen2.5架构的所有线性层
+  target_modules:
+    - "q_proj"            # 查询投影
+    - "k_proj"            # 键投影
+    - "v_proj"            # 值投影
+    - "o_proj"            # 输出投影
+    - "gate_proj"         # 门控投影
+    - "up_proj"           # 上投影
+    - "down_proj"         # 下投影
+
+  # LoRA配置
+  bias: "none"            # 不训练偏置项
+  task_type: "CAUSAL_LM"  # 因果语言模型任务
+  inference_mode: false   # 训练模式
+
+  # 高级设置
+  fan_in_fan_out: false   # 不使用fan_in_fan_out
+  init_lora_weights: true # 初始化LoRA权重
+
+# 内存估算 (基于Qwen2.5-3B)
+memory_estimation:
+  base_model: "2.8GB"     # Qwen2.5-3B基础模型 FP16
+  lora_params: "4.2MB"    # LoRA参数量 (约0.13%的原始参数)
+  training_overhead: "8GB" # 训练时额外开销(梯度、优化器状态等)
+  total_estimated: "~11GB" # 总内存使用估算
+
+  notes: |
+    - M3 Pro 18GB内存下安全运行
+    - LoRA只训练0.13%的原始参数
+    - 大大降低内存需求和训练时间
+
+# 实验配置
+experiments:
+  # 不同rank的配置供实验
+  small:
+    r: 8
+    lora_alpha: 16
+    description: "更少参数，更快训练"
+
+  medium:
+    r: 16
+    lora_alpha: 32
+    description: "平衡的配置（推荐）"
+
+  large:
+    r: 32
+    lora_alpha: 64
+    description: "更多参数，可能更好效果"
+
+# 目标模块说明
+target_modules_info:
+  q_proj: "注意力机制的查询投影层"
+  k_proj: "注意力机制的键投影层"
+  v_proj: "注意力机制的值投影层"
+  o_proj: "注意力机制的输出投影层"
+  gate_proj: "MLP的门控投影层"
+  up_proj: "MLP的上投影层"
+  down_proj: "MLP的下投影层"
