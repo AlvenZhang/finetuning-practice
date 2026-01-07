@@ -84,7 +84,6 @@ models/downloads/
 *.h5
 
 # Logs and experiments
-experiments/
 logs/
 wandb/
 runs/
