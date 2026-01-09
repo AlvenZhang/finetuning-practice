@@ -1,0 +1,136 @@
+# Qwen LoRA配置文件 - RTX 4090 GPU优化版本
+# Qwen LoRA Configuration for Parameter-Efficient Fine-tuning on RTX 4090
+
+lora:
+  # LoRA基本参数 - RTX 4090 24GB显存优化
+  r: 32                   # RTX 4090可以使用更高的rank，提升性能
+  lora_alpha: 64         # 缩放参数，设为2*r
+  lora_dropout: 0.1      # Qwen推荐的dropout值
+
+  # 目标模块 - Qwen2架构的所有线性层
+  target_modules:
+    - "q_proj"            # 查询投影
+    - "k_proj"            # 键投影
+    - "v_proj"            # 值投影
+    - "o_proj"            # 输出投影
+    - "gate_proj"         # 门控投影
+    - "up_proj"           # 上投影
+    - "down_proj"         # 下投影
+
+  # LoRA配置
+  bias: "none"            # 不训练偏置项
+  task_type: "CAUSAL_LM"  # 因果语言模型任务
+  inference_mode: false   # 训练模式
+
+  # 高级设置
+  fan_in_fan_out: false   # Qwen2不需要
+  init_lora_weights: true # 初始化LoRA权重
+  use_rslora: false       # 可选：使用RS-LoRA
+  use_dora: false         # 可选：使用DoRA
+
+  # GPU优化设置
+  modules_to_save: []     # 额外要保存的模块
+  revision: "main"
+
+# 参数统计 (Qwen2.5-3B + RTX 4090预期值)
+estimated_params:
+  total_params: "3.1B"           # Qwen2.5-3B总参数量
+  trainable_params: "~16.8M"     # LoRA可训练参数 (rank=32时约0.54%)
+  trainable_percentage: "0.54%"  # 可训练参数占比
+
+# RTX 4090显存估算 (24GB VRAM)
+memory_estimation:
+  base_model: "6.2GB"      # Qwen2.5-3B基础模型 (bfloat16)
+  lora_params: "64MB"      # LoRA参数 (rank=32)
+  gradients: "64MB"        # 梯度
+  optimizer_states: "128MB" # 优化器状态
+  activations: "8-10GB"    # 激活值 (batch_size=8, max_length=2048)
+  total_estimated: "~18-20GB" # 总估计显存使用，RTX 4090安全范围
+
+# 训练效率
+efficiency:
+  memory_reduction: "75%"   # 相比全量微调的显存减少
+  speed_improvement: "4-5x" # 训练速度提升
+  quality_retention: "97%+" # 性能保持度
+
+# RTX 4090优化实验配置
+experiments:
+  # RTX 4090不同rank实验设置
+  rank_experiments:
+    - r: 16
+      alpha: 32
+      description: "保守配置，节省显存"
+      estimated_vram: "15-16GB"
+    - r: 32
+      alpha: 64
+      description: "推荐RTX 4090配置"
+      estimated_vram: "18-20GB"
+    - r: 64
+      alpha: 128
+      description: "高性能配置，更大容量"
+      estimated_vram: "20-22GB"
+
+  # Qwen学习率实验
+  learning_rate_experiments:
+    - lr: 1.5e-4
+      description: "保守学习率，稳定训练"
+    - lr: 2e-4
+      description: "推荐学习率，RTX 4090最佳"
+    - lr: 2.5e-4
+      description: "较高学习率，需要监控"
+
+  # RTX 4090特定实验
+  rtx_4090_experiments:
+    # 批次大小实验
+    batch_size_experiments:
+      - batch_size: 4
+        gradient_accumulation: 32
+        description: "保守配置，14-16GB显存"
+      - batch_size: 8
+        gradient_accumulation: 16
+        description: "推荐RTX 4090配置，18-20GB显存"
+      - batch_size: 12
+        gradient_accumulation: 11
+        description: "激进配置，20-22GB显存"
+      - batch_size: 16
+        gradient_accumulation: 8
+        description: "最大配置，接近24GB上限"
+
+    # 序列长度实验
+    sequence_length_experiments:
+      - max_length: 1024
+        description: "标准序列长度"
+      - max_length: 2048
+        description: "推荐配置，长序列处理"
+      - max_length: 4096
+        description: "超长序列，需要减小batch_size"
+
+# 多GPU配置（如果使用多GPU训练）
+multi_gpu:
+  enabled: false
+  num_gpus: 1
+
+  # 分布式训练设置
+  distributed:
+    backend: "nccl"
+    init_method: "env://"
+
+  # 数据并行
+  data_parallel: false
+
+  # 模型并行（大模型）
+  model_parallel: false
+  pipeline_parallel: false
+
+# 量化配置（可选，进一步节省显存）
+quantization:
+  enabled: false  # RTX 4090显存充足，默认关闭
+
+  # 4bit量化配置
+  load_in_4bit: false
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_quant_type: "nf4"
+
+  # 8bit量化配置
+  load_in_8bit: false

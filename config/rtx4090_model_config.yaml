@@ -1,0 +1,140 @@
+# NVIDIA RTX 4090优化的Qwen模型配置文件
+# Qwen Model Configuration for GPU Fine-tuning (RTX 4090 Optimized)
+
+model:
+  name: "Qwen/Qwen2.5-3B-Instruct"  # 使用HuggingFace在线模型
+  model_type: "qwen2"
+  torch_dtype: "bfloat16"  # Qwen默认使用bfloat16，GPU数值稳定性更好
+  device_map: "auto"
+  trust_remote_code: true
+  use_cache: false  # 训练时禁用缓存以节省显存
+  low_cpu_mem_usage: true  # 降低CPU内存使用
+
+  # RTX 4090特定优化
+  attn_implementation: "flash_attention_2"  # 使用Flash Attention 2加速 (需要安装 flash-attn>=2.3.0)
+  use_flash_attention_2: true
+
+tokenizer:
+  name: "Qwen/Qwen2.5-3B-Instruct"  # 使用HuggingFace在线tokenizer
+  padding_side: "left"
+  truncation_side: "left"
+  add_eos_token: true
+  add_bos_token: false  # Qwen通常不需要BOS token
+
+training:
+  # 训练超参数 - RTX 4090优化 (24GB显存)
+  learning_rate: 2e-4  # RTX 4090可以使用更高的学习率
+  num_train_epochs: 3
+  per_device_train_batch_size: 8  # RTX 4090 24GB显存，可以使用更大批次
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 16  # 有效批大小 = 8 * 16 = 128
+
+  # 优化器设置
+  optim: "adamw_torch_fused"  # GPU融合优化器，更快
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+
+  # 学习率调度
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05  # RTX 4090可以使用稍高的warmup比例
+
+  # GPU内存优化
+  gradient_checkpointing: true
+  dataloader_pin_memory: true  # GPU环境启用pin_memory
+  remove_unused_columns: false
+  ddp_find_unused_parameters: false  # DDP优化
+
+  # 混合精度训练
+  bf16: true  # 使用bfloat16而不是fp16
+  fp16: false
+  tf32: true  # 启用TensorFloat-32（A100/H100）
+
+  # 数据加载优化 - RTX 4090可以使用更多worker
+  dataloader_num_workers: 8  # RTX 4090可以使用更多线程
+  dataloader_prefetch_factor: 4  # 更高的预取因子
+
+  # 保存和日志
+  save_steps: 500
+  eval_steps: 500
+  logging_steps: 10
+  save_total_limit: 3
+  evaluation_strategy: "steps"
+  save_strategy: "steps"
+
+  # 其他设置
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+  # RTX 4090特定优化
+  torch_compile: true  # PyTorch 2.0编译优化
+  include_inputs_for_metrics: false
+
+data:
+  # 数据集配置 - 使用HuggingFace在线数据集
+  dataset_name: "tatsu-lab/alpaca"  # 使用HuggingFace Alpaca数据集
+  max_length: 2048  # RTX 4090可以支持更长的序列长度
+  train_split: "train"
+  validation_split: 0.1
+  test_split: 0.1
+
+  # Qwen指令模板 - 使用Qwen Chat格式
+  instruction_template: "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n{instruction}\n{input}<|im_end|>\n<|im_start|>assistant\n{output}<|im_end|>"
+  prompt_template: "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n{instruction}\n{input}<|im_end|>\n<|im_start|>assistant\n"
+
+paths:
+  # 路径配置
+  output_dir: "./models/qwen_4090_checkpoints"
+  cache_dir: "./models/cache"
+  logging_dir: "./experiments/qwen_4090_logs"
+
+# RTX 4090特定配置
+gpu:
+  enabled: true
+  use_cuda: true
+  cuda_visible_devices: "0"  # 指定使用的GPU
+  memory_fraction: 0.95  # RTX 4090使用95%显存
+
+  # RTX 4090规格
+  gpu_model: "RTX 4090"
+  vram_size: "24GB"
+  compute_capability: "8.9"  # Ada Lovelace架构
+
+  # 性能优化
+  cudnn_benchmark: true  # 启用cuDNN基准测试
+  cudnn_deterministic: false  # 为了性能，不强制确定性
+
+  # 显存管理 - RTX 4090优化
+  empty_cache_steps: 100   # RTX 4090显存充足，可以减少清理频率
+  gradient_checkpointing_kwargs:
+    use_reentrant: false  # 新版本推荐设置
+
+# RTX 4090配置说明
+rtx_4090_config:
+  # 硬件规格
+  specifications:
+    vram: "24GB GDDR6X"
+    memory_bandwidth: "1008 GB/s"
+    cuda_cores: 16384
+    rt_cores: "128 (3rd gen)"
+    tensor_cores: "512 (4th gen)"
+    base_clock: "2230 MHz"
+    boost_clock: "2520 MHz"
+
+  # 推荐设置
+  recommended_settings:
+    batch_size: 8
+    max_length: 2048
+    lora_rank: 32
+    gradient_accumulation: 16
+    bf16: true
+    flash_attention_2: true
+
+  # 性能预期
+  performance_expectations:
+    training_time: "1-1.5 hours for 3 epochs"
+    memory_usage: "18-20GB VRAM"
+    tokens_per_second: "80-120"
