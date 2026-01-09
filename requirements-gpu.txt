@@ -11,7 +11,8 @@ peft>=0.7.0
 accelerate>=0.24.0
 
 # GPU加速库
-flash-attn>=2.3.0  # Flash Attention 2，显著加速训练
+# 注意：flash-attn 需要在 PyTorch 安装后单独安装，请先跳过此行
+flash-attn>=2.3.0  # Flash Attention 23，显著加速训练（需要单独安装）
 bitsandbytes>=0.41.0  # GPU量化支持
 deepspeed>=0.12.0  # 可选：大模型分布式训练
 

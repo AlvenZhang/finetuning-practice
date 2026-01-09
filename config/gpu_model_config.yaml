@@ -2,7 +2,7 @@
 # Qwen Model Configuration for GPU Fine-tuning (RTX 4060 Optimized)
 
 model:
-  name: "Qwen/Qwen2.5-3B-Instruct"  # 使用HuggingFace上的Qwen模型
+  name: "./models"  # 使用本地下载的模型
   model_type: "qwen2"
   torch_dtype: "bfloat16"  # Qwen默认使用bfloat16，GPU数值稳定性更好
   device_map: "auto"
@@ -11,11 +11,11 @@ model:
   low_cpu_mem_usage: true  # 降低CPU内存使用
 
   # GPU特定优化 - RTX 4060兼容
-  attn_implementation: "flash_attention_2"  # 使用Flash Attention 2加速
-  use_flash_attention_2: true
+  # attn_implementation: "flash_attention_2"  # 使用Flash Attention 2加速 (需要安装 flash-attn>=2.3.0)
+  # use_flash_attention_2: true
 
 tokenizer:
-  name: "Qwen/Qwen2.5-3B-Instruct"
+  name: "./models"  # 使用本地tokenizer
   padding_side: "left"
   truncation_side: "left"
   add_eos_token: true
@@ -74,8 +74,9 @@ training:
   include_inputs_for_metrics: false
 
 data:
-  # 数据集配置
-  dataset_name: "tatsu-lab/alpaca"
+  # 数据集配置 - 使用本地数据
+  dataset_name: "local"
+  data_path: "./data/raw/alpaca_data_cleaned.json"
   max_length: 1024  # RTX 4060适中序列长度，平衡性能和显存
   train_split: "train"
   validation_split: 0.1
